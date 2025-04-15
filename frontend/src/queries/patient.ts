@@ -1,6 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from './api';
 import { components } from './schema';
+import { useDebounce } from '@uidotdev/usehooks';
+import { useQuery } from '@tanstack/react-query';
 
 // Export schema types for use in components
 export type Patient = components['schemas']['Patient'];
@@ -9,7 +10,8 @@ export type PatientListResponse = {
 };
 
 // Constants
-const PATIENTS_ENDPOINT = '/patients/';
+const PATIENTS_ENDPOINT = '/patients';
+const SEARCH_DEBOUNCE_DELAY = 300;
 
 // Keys for React Query
 export const patientKeys = {
@@ -48,8 +50,11 @@ export const fetchPatientDetails = async (patientId: string): Promise<Patient> =
  * Hook to get patients with optional search parameters
  */
 export const usePatients = (params?: { name?: string }) => {
+  // Debouncing to prevent excessive API calls, since I removed the button/enter presses.
+  const searchTerm = useDebounce(params?.name, SEARCH_DEBOUNCE_DELAY);
+
   return useQuery({
-    queryKey: patientKeys.search(params?.name),
+    queryKey: patientKeys.search(searchTerm),
     queryFn: () => fetchPatients(params),
   });
 };

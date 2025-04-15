@@ -84,14 +84,17 @@ async def get_patient_details(patient_id: str) -> Patient | None:
     
     
 
-@app.get("/patients/", response_model=list[Patient], tags=["Patients"])
-async def list_patients() -> list[Patient]:
+@app.get("/patients", response_model=list[Patient], tags=["Patients"])
+async def list_patients(name: str | None = None, limit: int = 10) -> list[Patient]:
     """
-    Get all patients.
+    Get first `limit` number of patients.
     """
-    
     mapped_patients = []
+    
     for p in patients:
+        if len(mapped_patients) >= limit:
+            break
+
         # Extract full name from name array (family name + given names)
         full_name = ""
         if p.get("name") and len(p["name"]) > 0:
@@ -99,6 +102,9 @@ async def list_patients() -> list[Patient]:
             given_names = " ".join(name_obj.get("given", []))
             family_name = name_obj.get("family", "")
             full_name = f"{given_names} {family_name}".strip()
+            
+        if name and name.lower() not in full_name.lower():
+            continue
         
         # Transform to match Patient model
         mapped_patient = {

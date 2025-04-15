@@ -1,124 +1,90 @@
+import LoadingState from './ui/LoadingState';
+import { Patient } from '@queries/patient';
+import { PatientDetailsModal } from './PatientDetailsModal';
 import PatientRow from '@components/patients/PatientRow';
-import EmptyState from '@components/patients/ui/EmptyState';
-import ErrorState from '@components/patients/ui/ErrorState';
-import LoadingState from '@components/patients/ui/LoadingState';
-import { usePatients } from '@queries/patient';
+import { isEmpty } from 'lodash-es';
+import pluralize from 'pluralize';
 import { useState } from 'react';
 
-const PatientList = () => {
-  const [searchName, setSearchName] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+interface PatientListProps {
+  isLoading: boolean;
+  patients: Patient[];
+}
 
-  // Use React Query to fetch patients data
-  const { data, isLoading, isError, error, refetch } = usePatients(
-    searchQuery ? { name: searchQuery } : undefined
-  );
-
-  const handleSearch = () => {
-    setSearchQuery(searchName);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  };
-
-  if (isLoading) return <LoadingState />;
-
-  if (isError)
-    return (
-      <ErrorState
-        message={`Failed to load patients: ${error instanceof Error ? error.message : 'Unknown error'}`}
-        onRetry={() => refetch()}
-      />
-    );
-
-  if (!data || !data.patients || data.patients.length === 0) return <EmptyState />;
+const PatientList = ({ isLoading, patients }: PatientListProps) => {
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
 
   return (
-    <div className="w-full overflow-hidden">
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Patient List</h2>
-
-        <div className="flex flex-row gap-2 flex-wrap">
-          <input
-            type="text"
-            placeholder="Search patients by name..."
-            value={searchName}
-            onChange={(e) => setSearchName(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 flex-grow text-sm"
-            aria-label="Search patients"
-          />
-          <button
-            onClick={handleSearch}
-            className="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded hover:bg-gray-200 transition-colors whitespace-nowrap"
-            aria-label="Search button"
-          >
-            Search
-          </button>
-          <button
-            className="px-3 py-1.5 bg-blue-500 text-white text-sm font-medium rounded hover:bg-blue-600 transition-colors whitespace-nowrap"
-            aria-label="Add a new patient"
-          >
-            Add Patient
-          </button>
-        </div>
-      </div>
-
-      <div className="w-full bg-white shadow-md rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+    <>
+      <div className="w-full bg-white shadow-md rounded-lg overflow-hidden overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-blue-100">
+            <tr>
+              <th
+                scope="col"
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Name
+              </th>
+              <th
+                scope="col"
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell"
+              >
+                DOB
+              </th>
+              <th
+                scope="col"
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell"
+              >
+                ID
+              </th>
+              <th
+                scope="col"
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell"
+              >
+                Resource Type
+              </th>
+              <th
+                scope="col"
+                className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {isLoading && <LoadingState />}
+            {!isLoading && isEmpty(patients) ? (
               <tr>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Name
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell"
-                >
-                  DOB
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell"
-                >
-                  ID
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell"
-                >
-                  Resource Type
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Actions
-                </th>
+                <td colSpan={5}>No patients found. Please try again.</td>
               </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {data.patients.map((patient) => (
-                <PatientRow key={patient.id} patient={patient} />
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ) : (
+              patients.map((patient) => (
+                <PatientRow
+                  key={patient.id}
+                  patient={patient}
+                  onClickView={() => setSelectedPatient(patient)}
+                />
+              ))
+            )}
+          </tbody>
+        </table>
+
+        {!isEmpty(patients) && (
+          <div className="flex justify-center gap-1 text-sm text-gray-700 p-5">
+            Showing <strong>{patients.length}</strong> {pluralize('patient', patients.length)}
+          </div>
+        )}
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4 gap-2">
-        <div className="text-sm text-gray-700">
-          Showing <span className="font-medium">{data.patients.length}</span> patient(s)
-        </div>
-      </div>
-    </div>
+      {selectedPatient && (
+        <PatientDetailsModal
+          opened={!!selectedPatient}
+          onClose={() => setSelectedPatient(null)}
+          patient={selectedPatient}
+        />
+      )}
+    </>
   );
 };
 

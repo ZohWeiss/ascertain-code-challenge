@@ -1,10 +1,12 @@
 import { Patient } from '@queries/patient';
+import { noop } from 'lodash-es';
 
 interface PatientRowProps {
+  onClickView: () => void;
   patient: Patient;
 }
 
-const PatientRow = ({ patient }: PatientRowProps) => {
+const PatientRow = ({ onClickView = noop, patient }: PatientRowProps) => {
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString();
@@ -13,7 +15,12 @@ const PatientRow = ({ patient }: PatientRowProps) => {
   return (
     <tr className="hover:bg-gray-50">
       <td className="px-4 py-3 whitespace-nowrap">
-        <div className="text-sm font-medium text-gray-900">{patient.full_name}</div>
+        <div
+          className="text-sm font-medium text-gray-900 cursor-pointer hover:underline"
+          onClick={onClickView}
+        >
+          {patient.full_name}
+        </div>
       </td>
       <td className="px-4 py-3 whitespace-nowrap hidden sm:table-cell">
         <div className="text-sm text-gray-500">{formatDate(patient.birth_date)}</div>
@@ -24,10 +31,11 @@ const PatientRow = ({ patient }: PatientRowProps) => {
       <td className="px-4 py-3 whitespace-nowrap hidden lg:table-cell">
         <div className="text-sm text-gray-500">{patient.resourceType}</div>
       </td>
-      <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+      <td className="flex px-4 py-3 whitespace-nowrap text-right text-sm font-medium gap-5 justify-end">
         <button
           className="text-blue-600 hover:text-blue-900 mr-2"
           aria-label={`View ${patient.full_name}`}
+          onClick={onClickView}
         >
           View
         </button>
@@ -37,7 +45,10 @@ const PatientRow = ({ patient }: PatientRowProps) => {
         >
           Edit
         </button>
-        <button className="text-red-600 hover:text-red-900" aria-label={`Delete ${patient.full_name}`}>
+        <button
+          className="text-red-600 hover:text-red-900"
+          aria-label={`Delete ${patient.full_name}`}
+        >
           Delete
         </button>
       </td>
